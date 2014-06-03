@@ -62,7 +62,7 @@ Yields:
 
 # Docs?
 
-[Godocs](http://godoc.org/github.com/aybabtme/uniplot/histogram)!
+[Godocs](http://godoc.org/github.com/aybabtme/uniplot/barchart)!
 
 # License
 
