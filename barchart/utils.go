@@ -80,12 +80,12 @@ func fprintf(w io.Writer, p BarChart, width int, s ScaleFunc, xfmt, yfmt FormatF
 			bar = "nil"
 		} else {
 			bar = barstring(*xy.ScaledY)
-			ystr = yfmt(*xy.Y)
+			ystr = " " + yfmt(*xy.Y)
 		}
 
 		fmt.Fprintf(tabw, "%s\t%s\n",
 			xstr,
-			bar+" "+ystr,
+			bar+ystr,
 		)
 	}
 
