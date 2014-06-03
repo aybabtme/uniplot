@@ -37,7 +37,8 @@ for _, bkt := range hist.Buckets {
 }
 ```
 
-You can use the `Fprint` utility to create this Unicode graph:
+You can use the `Fprint` utility to create this Unicode graph (the graph looks better with fonts that
+draw unicode blocks properly):
 
 ```
 0.1-0.2  5%   ▉       [1/20]
