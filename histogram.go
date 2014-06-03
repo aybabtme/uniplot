@@ -50,7 +50,10 @@ func Hist(bins int, input []float64) Histogram {
 
 	minC, maxC := 0, 0
 	for _, val := range input {
-		bi := imin(int(val/scale), len(buckets)) - 1
+		minx := float64(min)
+		xdiff := val - minx
+		bi := imin(int(xdiff/scale), len(buckets)-1)
+
 		buckets[bi].Count++
 		minC = imin(minC, buckets[bi].Count)
 		maxC = imax(maxC, buckets[bi].Count)
