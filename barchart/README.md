@@ -2,7 +2,6 @@
 
 Makes barcharts.
 
-
 # Usage
 
 Pass `[][2]int` values to `BarChartXYs`:

@@ -34,3 +34,5 @@ A small collection of plot helpers.  Make Unicode barcharts:
 0.8-0.9  5%   ▋1
 0.9-1    10%  █▏2
 ```
+
+If your console font is Monaco, one of the blocks look weird. Use Menlo. =)
