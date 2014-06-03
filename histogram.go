@@ -4,19 +4,31 @@ import (
 	"math"
 )
 
+// Histogram holds a count of values partionned over buckets.
 type Histogram struct {
-	Min     int
-	Max     int
-	Count   int
+	// Min is the size of the smallest bucket.
+	Min int
+	// Max is the size of the biggest bucket.
+	Max int
+	// Count is the total size of all buckets.
+	Count int
+	// Buckets over which values are partionned.
 	Buckets []Bucket
 }
 
+// Bucket counts a partion of values.
 type Bucket struct {
+	// Count is the number of values represented in the bucket.
 	Count int
-	Min   float64
-	Max   float64
+	// Min is the low, inclusive bound of the bucket.
+	Min float64
+	// Max is the high, exclusive bound of the bucket. If
+	// this bucket is the last bucket, the bound is inclusive
+	// and contains the max value of the histogram.
+	Max float64
 }
 
+// Hist creates an histogram partionning input over `bins` buckets.
 func Hist(bins int, input []float64) Histogram {
 	if len(input) == 0 || bins == 0 {
 		return Histogram{}
@@ -53,15 +65,20 @@ func Hist(bins int, input []float64) Histogram {
 	}
 }
 
-func (h Histogram) Scale(s Scale, idx int) float64 {
+// Scale gives the scaled count of the bucket at idx, using the
+// provided scale func.
+func (h Histogram) Scale(s ScaleFunc, idx int) float64 {
 	bkt := h.Buckets[idx]
 	scale := s(h.Min, h.Max, bkt.Count)
 	return scale
 }
 
-type Scale func(min, max, value int) float64
+// ScaleFunc is the type to implement to scale an histogram.
+type ScaleFunc func(min, max, value int) float64
 
-func Linear(width int) Scale {
+// Linear builds a ScaleFunc that will linearly scale the values of
+// an histogram so that they do not exceed width.
+func Linear(width int) ScaleFunc {
 	return func(min, max, value int) float64 {
 		return float64(value-min) / float64(max-min) * float64(width)
 	}
