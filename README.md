@@ -2,6 +2,7 @@
 
 Makes histograms.
 
+
 # Usage
 
 Pass `[]float64` values to `Hist`, along with the number of bins
@@ -73,3 +74,11 @@ err := FPrint(os.Stdout, hist, Linear(maxWidth))
 ```
 
 You can pass your own `Scale` func if you want a `Log` scale instead of `Linear`.
+
+# Docs?
+
+[Godocs](http://godoc.org/github.com/aybabtme/histogram)!
+
+# License
+
+MIT license.
