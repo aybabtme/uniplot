@@ -1,5 +1,9 @@
 package barchat
 
+import (
+	"math"
+)
+
 // XY point in a 2D plot.
 type XY struct{ X, Y int }
 
@@ -38,16 +42,6 @@ func (p *BarChart) XYs() []*XY {
 // Empty slots between two Xs are left nil to represent
 // the absence of data. The values are scaled using s.
 func (p *BarChart) ScaleXYs(xWidth int, s ScaleFunc) []XYf {
-	xysf := make([]XYf, len(p.xy))
-	for i, xy := range p.xy {
-		y := float64(xy.Y)
-		scaledY := s(p.MinY, p.MaxY, xy.Y)
-		xysf[i] = XYf{
-			X:       float64(xy.X),
-			Y:       &y,
-			ScaledY: &scaledY,
-		}
-	}
 
 	diff := p.MaxX - p.MinX
 	scaleX := float64(diff) / float64(xWidth-1)
@@ -61,9 +55,11 @@ func (p *BarChart) ScaleXYs(xWidth int, s ScaleFunc) []XYf {
 		}
 	}
 
-	for _, val := range xysf {
+	miny, maxy := float64(p.xy[0].Y), float64(p.xy[0].Y)
+
+	for _, val := range p.xy {
 		minx := float64(p.MinX)
-		xdiff := val.X - minx
+		xdiff := float64(val.X) - minx
 		bi := int(xdiff / scaleX)
 
 		slot := buckets[bi]
@@ -71,11 +67,20 @@ func (p *BarChart) ScaleXYs(xWidth int, s ScaleFunc) []XYf {
 			slot.Y = new(float64)
 			slot.ScaledY = new(float64)
 		}
-
-		*slot.Y += *val.Y
-		*slot.ScaledY += *val.ScaledY
+		y := float64(val.Y)
+		*slot.Y += y
+		miny = math.Min(*slot.Y, miny)
+		maxy = math.Max(*slot.Y, maxy)
 		buckets[bi] = slot
 	}
+
+	for _, val := range buckets {
+		if val.Y == nil {
+			continue
+		}
+		*val.ScaledY = s(miny, maxy, *val.Y)
+	}
+
 	return buckets
 }
 
@@ -106,13 +111,16 @@ func BarChartXYs(xys [][2]int) BarChart {
 }
 
 // ScaleFunc is the type to implement to scale an histogram.
-type ScaleFunc func(min, max, value int) float64
+type ScaleFunc func(min, max, value float64) float64
 
 // Linear builds a ScaleFunc that will linearly scale the values of
 // an histogram so that they do not exceed width.
 func Linear(width int) ScaleFunc {
-	return func(min, max, value int) float64 {
-		return float64(value-min) / float64(max-min) * float64(width)
+	return func(min, max, value float64) float64 {
+		diff := max - min
+		offset := value - min
+		ratio := offset / diff
+		return ratio * float64(width)
 	}
 }
 

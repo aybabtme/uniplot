@@ -38,7 +38,7 @@ if err := Fprint(os.Stdout, plot, Linear(19)); err != nil {
 }
 ```
 
-Yields:
+Yields :
 
 ```
 0   █ 1
@@ -58,6 +58,8 @@ Yields:
 14  ▏ 0
 15  ███████████████████▏ 20
 ```
+
+If your console font is Monaco, one of the blocks look weird. Use Menlo. =)
 
 # Docs?
 
