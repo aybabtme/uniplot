@@ -21,7 +21,7 @@ func ExampleHist() {
 
 	hist := Hist(9, data)
 
-	if err := FPrint(os.Stdout, hist, Linear(5)); err != nil {
+	if err := Fprint(os.Stdout, hist, Linear(5)); err != nil {
 		panic(err)
 	}
 	// Output:
@@ -65,7 +65,7 @@ func ExampleHist_duration() {
 
 	hist := Hist(9, data)
 
-	err := FPrintf(os.Stdout, hist, Linear(5), func(v float64) string {
+	err := Fprintf(os.Stdout, hist, Linear(5), func(v float64) string {
 		return time.Duration(v).String()
 	})
 	if err != nil {

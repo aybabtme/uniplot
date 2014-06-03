@@ -37,7 +37,7 @@ for _, bkt := range hist.Buckets {
 }
 ```
 
-You can use the `FPrint` utility to create this Unicode graph:
+You can use the `Fprint` utility to create this Unicode graph:
 
 ```
 0.1-0.2  5%   ▉       [1/20]
@@ -70,7 +70,7 @@ bins := 9
 hist := Hist(bins, data)
 
 maxWidth := 5
-err := FPrint(os.Stdout, hist, Linear(maxWidth))
+err := Fprint(os.Stdout, hist, Linear(maxWidth))
 ```
 
 You can pass your own `Scale` func if you want a `Log` scale instead of `Linear`.

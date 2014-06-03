@@ -22,11 +22,11 @@ var barchar = func(v float64) string {
 	return blocks[diff]
 }
 
-// FPrint prints a unicode histogram on the io.Writer, using
+// Fprint prints a unicode histogram on the io.Writer, using
 // scale s. This code:
 //
 // 	hist := Hist(9, data)
-// 	err := FPrint(os.Stdout, hist, Linear(5))
+// 	err := Fprint(os.Stdout, hist, Linear(5))
 //
 // ... yields the graph:
 //
@@ -39,14 +39,14 @@ var barchar = func(v float64) string {
 //	0.7-0.8  0%   ▏       [0/20]
 //	0.8-0.9  5%   ▉       [1/20]
 //	0.9-1    10%  █▏      [2/20]
-func FPrint(w io.Writer, h Histogram, s ScaleFunc) error {
+func Fprint(w io.Writer, h Histogram, s ScaleFunc) error {
 	return fprintf(w, h, s, func(v float64) string {
 		return fmt.Sprintf("%.4g", v)
 	})
 }
 
-// FPrintf is the same as FPrint, but applies f to the axis labels.
-func FPrintf(w io.Writer, h Histogram, s ScaleFunc, f FormatFunc) error {
+// Fprintf is the same as Fprint, but applies f to the axis labels.
+func Fprintf(w io.Writer, h Histogram, s ScaleFunc, f FormatFunc) error {
 	return fprintf(w, h, s, f)
 }
 
