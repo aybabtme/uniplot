@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/dustin/go-humanize"
+	"github.com/eapache/queue"
 	"github.com/olekukonko/ts"
 	"io"
 	"log"
@@ -26,10 +27,11 @@ const (
 // By default, it prints to os.Stdout and is unitless.
 func Spark(resolution time.Duration) *SparkStream {
 	return &SparkStream{
-		Out:  os.Stdout,
-		buf:  bytes.NewBuffer(nil),
-		res:  resolution,
-		tick: time.NewTicker(resolution),
+		Out:   os.Stdout,
+		buf:   bytes.NewBuffer(nil),
+		queue: queue.New(),
+		res:   resolution,
+		tick:  time.NewTicker(resolution),
 	}
 }
 
@@ -51,7 +53,7 @@ type SparkStream struct {
 	min   float64
 	avg   float64
 	cur   float64
-	queue []float64
+	queue *queue.Queue
 
 	res  time.Duration
 	tick *time.Ticker
@@ -86,22 +88,19 @@ func (s *SparkStream) printLines() {
 
 	// ensure queue is as large as largest terminal seen so far
 	s.curwidth = size.Col()
-
 	if s.curwidth > s.maxwidth {
 		s.maxwidth = s.curwidth
 	}
-
-	// drop the last value if the queue is full
-	if len(s.queue) == s.maxwidth {
-		// ring buffer would be more efficient, but wtv
-		s.queue = s.queue[1:]
+	if s.queue.Length() == s.maxwidth {
+		s.queue.Remove()
 	}
 
-	s.queue = append(s.queue, s.cur)
+	s.queue.Add(s.cur)
 	s.cur = 0.0
 
 	var sum float64
-	for i, val := range s.queue {
+	for i := 0; i < s.queue.Length(); i++ {
+		val := s.queue.Get(i).(float64)
 		if i == 0 {
 			s.max = val
 			s.min = val
@@ -111,7 +110,7 @@ func (s *SparkStream) printLines() {
 		}
 		sum += val
 	}
-	s.avg = sum / (s.res.Seconds() * float64(len(s.queue)))
+	s.avg = sum / (s.res.Seconds() * float64(s.queue.Length()))
 
 	var avgStr string
 	switch s.Units {
@@ -134,17 +133,18 @@ func (s *SparkStream) printLines() {
 	// visibleIdx is the index in the queue where the last value
 	// visible on the terminal is found. before that, the queue
 	// still tracks the data but we should not print it
-	visibleIdx := imax(0, len(s.queue)-s.curwidth+len(avgStr))
+	visibleIdx := imax(0, s.queue.Length()-s.curwidth+len(avgStr))
 
 	if debug {
-		log.Printf("visibleIdx=%d\tlen(avgStr)=%d\tlen(s.queue)=%d",
-			visibleIdx, len(avgStr), len(s.queue))
+		log.Printf("visibleIdx=%d\tlen(avgStr)=%d\ts.queue.Length()=%d",
+			visibleIdx, len(avgStr), s.queue.Length())
 	}
 
 	s.buf.Reset()
 	_, _ = s.buf.WriteRune('\r')
 	var runec int
-	for _, val := range s.queue[visibleIdx:] {
+	for i := visibleIdx; i < s.queue.Length(); i++ {
+		val := s.queue.Get(i).(float64)
 		runec++
 		_, _ = s.buf.WriteRune(blockIdx(val, s.min, s.max))
 	}
