@@ -1,0 +1,182 @@
+package spark
+
+import (
+	"bytes"
+	"fmt"
+	"github.com/dustin/go-humanize"
+	"github.com/olekukonko/ts"
+	"io"
+	"log"
+	"math"
+	"os"
+	"sync"
+	"time"
+)
+
+const debug = false
+
+type Unit string
+
+const (
+	Bytes = "bytes"
+)
+
+func Spark(resolution time.Duration) *SparkStream {
+	return &SparkStream{
+		Out:  os.Stdout,
+		buf:  bytes.NewBuffer(nil),
+		res:  resolution,
+		tick: time.NewTicker(resolution),
+	}
+}
+
+type SparkStream struct {
+	Units Unit
+	Out   io.Writer
+
+	l sync.Mutex
+
+	maxwidth int
+	curwidth int
+
+	buf *bytes.Buffer
+
+	max   float64
+	min   float64
+	avg   float64
+	cur   float64
+	queue []float64
+
+	res  time.Duration
+	tick *time.Ticker
+}
+
+func (s *SparkStream) Start() {
+	go func() {
+		for _ = range s.tick.C {
+			s.printLines()
+		}
+	}()
+}
+
+func (s *SparkStream) Stop() { s.tick.Stop() }
+
+func (s *SparkStream) Add(v float64) {
+	s.l.Lock()
+	s.cur += v
+	s.l.Unlock()
+}
+
+func (s *SparkStream) printLines() {
+	size, err := ts.GetSize()
+	if err != nil {
+		log.Printf("SparkStream: get size error, %v", err)
+		return
+	}
+
+	// ensure queue is as large as largest terminal seen so far
+	s.curwidth = size.Col()
+
+	if s.curwidth > s.maxwidth {
+		s.maxwidth = s.curwidth
+	}
+
+	// drop the last value if the queue is full
+	if len(s.queue) == s.maxwidth {
+		// ring buffer would be more efficient, but wtv
+		s.queue = s.queue[1:]
+	}
+
+	s.queue = append(s.queue, s.cur)
+	s.cur = 0.0
+
+	var sum float64
+	for i, val := range s.queue {
+		if i == 0 {
+			s.max = val
+			s.min = val
+		} else {
+			s.max = math.Max(s.max, val)
+			s.min = math.Min(s.min, val)
+		}
+		sum += val
+	}
+	s.avg = sum / (s.res.Seconds() * float64(len(s.queue)))
+
+	var avgStr string
+	switch s.Units {
+	case Bytes:
+		avgStr = " " + humanize.Bytes(uint64(s.avg)) + "/s"
+	case "":
+		if s.avg > 1000.0 {
+			avgStr = " " + humanize.Comma(int64(s.avg)) + "/s"
+		} else {
+			avgStr = " " + fmt.Sprintf("%.3f", s.avg) + "/s"
+		}
+	default:
+		if s.avg > 1000.0 {
+			avgStr = " " + humanize.Comma(int64(s.avg)) + string(s.Units) + "/s"
+		} else {
+			avgStr = " " + fmt.Sprintf("%.3f", s.avg) + string(s.Units) + "/s"
+		}
+	}
+
+	// visibleIdx is the index in the queue where the last value
+	// visible on the terminal is found. before that, the queue
+	// still tracks the data but we should not print it
+	visibleIdx := imax(0, len(s.queue)-s.curwidth+len(avgStr))
+
+	if debug {
+		log.Printf("visibleIdx=%d\tlen(avgStr)=%d\tlen(s.queue)=%d",
+			visibleIdx, len(avgStr), len(s.queue))
+	}
+
+	s.buf.Reset()
+	_, _ = s.buf.WriteRune('\r')
+	var runec int
+	for _, val := range s.queue[visibleIdx:] {
+		runec++
+		_, _ = s.buf.WriteRune(blockIdx(val, s.min, s.max))
+	}
+	for runec < s.curwidth-len(avgStr) {
+		runec++
+		_, _ = s.buf.WriteRune(' ')
+	}
+	_, _ = s.buf.WriteString(avgStr)
+	_, err = s.buf.WriteTo(s.Out)
+	if err != nil {
+		log.Printf("SparkStream: writing to output: %v", err)
+	}
+}
+
+var blocks = [...]rune{'▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
+
+func blockIdx(val, min, max float64) rune {
+	if val >= max {
+		return blocks[len(blocks)-1]
+	}
+
+	width := (max - min)
+	if width <= math.SmallestNonzeroFloat64 {
+		return blocks[0]
+	}
+
+	parts := val / width
+	fIdx := parts * float64(len(blocks))
+	i := imin(int(fIdx), len(blocks)-1)
+	return blocks[i]
+}
+
+func imax(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func imin(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
