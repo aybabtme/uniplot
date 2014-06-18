@@ -37,6 +37,6 @@ A small collection of plot helpers.  Make Unicode barcharts:
 
 ... or realtime spark lines:
 
-![example-sparklines](https://cloud.githubusercontent.com/assets/1189716/3311153/5fba51f2-f6c0-11e3-947a-63c3b666fddf.gif)
+![example-sparklines](https://cloud.githubusercontent.com/assets/1189716/3317255/09998004-f70b-11e3-8aab-597bd848c467.gif)
 
 If your console font is Monaco, one of the blocks look weird. Use Menlo. =)
