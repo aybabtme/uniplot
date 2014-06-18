@@ -15,12 +15,15 @@ import (
 
 const debug = false
 
-type Unit string
-
 const (
+	// Bytes is a predefined unit type, will pretty print using humanized values.
 	Bytes = "bytes"
 )
 
+// Spark creates a stream of sparklines that will print every lines bucketize
+// with the given resolution.
+//
+// By default, it prints to os.Stdout and is unitless.
 func Spark(resolution time.Duration) *SparkStream {
 	return &SparkStream{
 		Out:  os.Stdout,
@@ -30,8 +33,11 @@ func Spark(resolution time.Duration) *SparkStream {
 	}
 }
 
+// SparkStream prints sparklines for values it receives in real time. It
+// scales up and down the visible window of values and prints the average
+// values per second it has observed in recent history.
 type SparkStream struct {
-	Units Unit
+	Units string
 	Out   io.Writer
 
 	l sync.Mutex
@@ -51,6 +57,7 @@ type SparkStream struct {
 	tick *time.Ticker
 }
 
+// Start starts the printing of sparklines.
 func (s *SparkStream) Start() {
 	go func() {
 		for _ = range s.tick.C {
@@ -59,8 +66,11 @@ func (s *SparkStream) Start() {
 	}()
 }
 
+// Stop stops the printing of sparklines.
 func (s *SparkStream) Stop() { s.tick.Stop() }
 
+// Add puts the value in the current bucket of sparklines. The value
+// will appear part of the next update of the spark stream.
 func (s *SparkStream) Add(v float64) {
 	s.l.Lock()
 	s.cur += v

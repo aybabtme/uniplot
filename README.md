@@ -35,4 +35,8 @@ A small collection of plot helpers.  Make Unicode barcharts:
 0.9-1    10%  █▏2
 ```
 
+... or realtime spark lines:
+
+![example-sparklines](https://cloud.githubusercontent.com/assets/1189716/3311153/5fba51f2-f6c0-11e3-947a-63c3b666fddf.gif)
+
 If your console font is Monaco, one of the blocks look weird. Use Menlo. =)
