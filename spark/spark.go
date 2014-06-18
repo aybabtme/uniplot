@@ -171,9 +171,14 @@ func blockIdx(val, min, max float64) rune {
 		return blocks[0]
 	}
 
-	parts := val / width
+	parts := (val - min) / width
 	fIdx := parts * float64(len(blocks))
 	i := imin(int(fIdx), len(blocks)-1)
+
+	if debug {
+		log.Printf("val=%g\tmin=%g\tmax=%g\twidth=%g\tparts=%g\tfIdx=%g\ti=%d", val, min, max, width, parts, fIdx, i)
+	}
+
 	return blocks[i]
 }
 
