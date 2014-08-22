@@ -40,6 +40,30 @@ func Reader(r io.Reader) io.Reader {
 	})
 }
 
+// ReaderOut wraps the reads of r with a SparkStream. The stream will
+// have Bytes units and refresh every 60ms.
+//
+// It will stop printing when the reader returns an error.
+func ReaderOut(r io.Reader, out io.Writer) io.Reader {
+	sprk := Spark(time.Millisecond * 60)
+	sprk.Out = out
+	sprk.Units = Bytes
+	started := false
+	return reader(func(b []byte) (int, error) {
+		if !started {
+			sprk.Start()
+			started = true
+		}
+		n, err := r.Read(b)
+		if err == nil {
+			sprk.Add(float64(n))
+		} else {
+			sprk.Stop()
+		}
+		return n, err
+	})
+}
+
 // Writer wraps the writes to w with a SparkStream. The stream will
 // have Bytes units and refresh every 60ms.
 //
