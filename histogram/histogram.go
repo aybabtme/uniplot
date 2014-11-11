@@ -45,7 +45,7 @@ func Hist(bins int, input []float64) Histogram {
 	scale := (max - min) / float64(bins)
 
 	for i := range buckets {
-		bmin, bmax := float64(i+1)*scale, float64(i+2)*scale
+		bmin, bmax := float64(i)*scale+min, float64(i+1)*scale+min
 		buckets[i] = Bucket{Min: bmin, Max: bmax}
 	}
 
@@ -60,6 +60,47 @@ func Hist(bins int, input []float64) Histogram {
 		buckets[bi].Count++
 		minC = imin(minC, buckets[bi].Count)
 		maxC = imax(maxC, buckets[bi].Count)
+	}
+
+	return Histogram{
+		Min:     minC,
+		Max:     maxC,
+		Count:   len(input),
+		Buckets: buckets,
+	}
+}
+
+// PowerHist creates an histogram partionning input over buckets of power
+// `pow`.
+func PowerHist(power float64, input []float64) Histogram {
+	if len(input) == 0 || power <= 0 {
+		return Histogram{}
+	}
+
+	minx, maxx := input[0], input[0]
+	for _, val := range input {
+		minx = math.Min(minx, val)
+		maxx = math.Max(maxx, val)
+	}
+
+	fromPower := math.Floor(logbase(minx, power))
+	toPower := math.Floor(logbase(maxx, power))
+
+	buckets := make([]Bucket, int(toPower-fromPower)+1)
+	for i, bkt := range buckets {
+		bkt.Min = math.Pow(power, float64(i)+fromPower)
+		bkt.Max = math.Pow(power, float64(i+1)+fromPower)
+		buckets[i] = bkt
+	}
+
+	minC := 0
+	maxC := 0
+	for _, val := range input {
+		powAway := logbase(val, power) - fromPower
+		bi := int(math.Floor(powAway))
+		buckets[bi].Count++
+		minC = imin(buckets[bi].Count, minC)
+		maxC = imax(buckets[bi].Count, maxC)
 	}
 
 	return Histogram{
@@ -87,6 +128,10 @@ func Linear(width int) ScaleFunc {
 	return func(min, max, value int) float64 {
 		return float64(value-min) / float64(max-min) * float64(width)
 	}
+}
+
+func logbase(a, base float64) float64 {
+	return math.Log2(a) / math.Log2(base)
 }
 
 func imin(a, b int) int {
