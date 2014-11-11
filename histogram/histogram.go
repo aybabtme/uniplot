@@ -1,6 +1,7 @@
 package histogram
 
 import (
+	"log"
 	"math"
 )
 
@@ -53,7 +54,9 @@ func Hist(bins int, input []float64) Histogram {
 		minx := float64(min)
 		xdiff := val - minx
 		bi := imin(int(xdiff/scale), len(buckets)-1)
-
+		if bi < 0 || bi >= len(buckets) {
+			log.Panicf("bi=%d\tval=%f\txdiff=%f\tscale=%f\tlen(buckets)=%d", bi, val, xdiff, scale, len(buckets))
+		}
 		buckets[bi].Count++
 		minC = imin(minC, buckets[bi].Count)
 		maxC = imax(maxC, buckets[bi].Count)

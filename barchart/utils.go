@@ -1,4 +1,4 @@
-package barchat
+package barchart
 
 import (
 	"fmt"

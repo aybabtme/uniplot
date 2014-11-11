@@ -1,4 +1,4 @@
-package barchat
+package barchart
 
 import (
 	"github.com/dustin/go-humanize"
