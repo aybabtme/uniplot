@@ -79,7 +79,11 @@ func fprintf(w io.Writer, p BarChart, width int, s ScaleFunc, xfmt, yfmt FormatF
 			ystr = ""
 			bar = "nil"
 		} else {
-			bar = barstring(*xy.ScaledY)
+			scaledY := *xy.ScaledY
+			if math.IsNaN(scaledY) {
+				scaledY = 1.0
+			}
+			bar = barstring(scaledY)
 			ystr = " " + yfmt(*xy.Y)
 		}
 
