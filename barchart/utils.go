@@ -76,8 +76,7 @@ func fprintf(w io.Writer, p BarChart, width int, s ScaleFunc, xfmt, yfmt FormatF
 		var ystr string
 		var bar string
 		if xy.Y == nil {
-			ystr = ""
-			bar = "nil"
+			continue
 		} else {
 			scaledY := *xy.ScaledY
 			if math.IsNaN(scaledY) {
