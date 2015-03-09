@@ -17,9 +17,14 @@ var blocks = []string{
 }
 
 var barstring = func(v float64) string {
-	decimalf := (v - math.Floor(v)) * 10.0
-	decimali := math.Floor(decimalf)
-	charIdx := int(decimali / 10.0 * 8.0)
+	var charIdx int
+	if !math.IsNaN(v) {
+		decimalf := (v - math.Floor(v)) * 10.0
+		decimali := math.Floor(decimalf)
+		charIdx = int(decimali / 10.0 * 8.0)
+	} else {
+		v = 0.0
+	}
 	return strings.Repeat("█", int(v)) + blocks[charIdx]
 }
 
