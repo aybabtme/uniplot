@@ -67,7 +67,7 @@ func fprintf(w io.Writer, h Histogram, s ScaleFunc, f FormatFunc) error {
 		fmt.Fprintf(tabw, "%s-%s\t%.3g%%\t%s\n",
 			f(bkt.Min), f(bkt.Max),
 			float64(bkt.Count)*100.0/float64(h.Count),
-			barstring(sz)+yfmt(bkt.Count),
+			barstring(sz)+"\t"+yfmt(bkt.Count),
 		)
 	}
 
