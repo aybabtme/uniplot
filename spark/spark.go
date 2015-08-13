@@ -3,10 +3,9 @@ package spark
 import (
 	"bytes"
 	"fmt"
+	"github.com/aybabtme/uniplot/spark/ts"
 	"github.com/dustin/go-humanize"
 	"github.com/eapache/queue"
-	"github.com/olekukonko/ts"
-	"io"
 	"log"
 	"math"
 	"os"
@@ -40,7 +39,7 @@ func Spark(resolution time.Duration) *SparkStream {
 // values per second it has observed in recent history.
 type SparkStream struct {
 	Units string
-	Out   io.Writer
+	Out   *os.File
 
 	l sync.Mutex
 
@@ -80,7 +79,7 @@ func (s *SparkStream) Add(v float64) {
 }
 
 func (s *SparkStream) printLines() {
-	size, err := ts.GetSize()
+	size, err := ts.GetSize(s.Out)
 	if err != nil {
 		log.Printf("SparkStream: get size error, %v", err)
 		return

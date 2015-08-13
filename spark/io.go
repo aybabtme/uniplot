@@ -18,11 +18,11 @@ type writer func(b []byte) (int, error)
 func (w writer) Write(b []byte) (int, error) { return w(b) }
 
 // Reader wraps the reads of r with a SparkStream. The stream will
-// have Bytes units and refresh every 60ms.
+// have Bytes units and refresh every 33ms.
 //
 // It will stop printing when the reader returns an error.
 func Reader(r io.Reader) io.Reader {
-	sprk := Spark(time.Millisecond * 60)
+	sprk := Spark(time.Millisecond * 33)
 	sprk.Units = Bytes
 	started := false
 	return reader(func(b []byte) (int, error) {
@@ -41,11 +41,11 @@ func Reader(r io.Reader) io.Reader {
 }
 
 // ReaderOut wraps the reads of r with a SparkStream. The stream will
-// have Bytes units and refresh every 60ms.
+// have Bytes units and refresh every 33ms.
 //
 // It will stop printing when the reader returns an error.
-func ReaderOut(r io.Reader, out io.Writer) io.Reader {
-	sprk := Spark(time.Millisecond * 60)
+func ReaderOut(r io.Reader, out *os.File) io.Reader {
+	sprk := Spark(time.Millisecond * 33)
 	sprk.Out = out
 	sprk.Units = Bytes
 	started := false
@@ -65,17 +65,17 @@ func ReaderOut(r io.Reader, out io.Writer) io.Reader {
 }
 
 // Writer wraps the writes to w with a SparkStream. The stream will
-// have Bytes units and refresh every 60ms.
+// have Bytes units and refresh every 33ms.
 //
 // It will stop printing when the writer returns an error.
-func Writer(w io.Writer) io.Writer {
-
-	if f, ok := w.(*os.File); ok && f == os.Stdout {
-		panic("cannot use Writer with os.Stdout")
+func Writer(w io.Writer) (io.Writer, func()) {
+	var out = os.Stderr
+	if f, ok := w.(*os.File); ok && f == os.Stderr {
+		out = os.Stdout
 	}
-
-	sprk := Spark(time.Millisecond * 60)
+	sprk := Spark(time.Millisecond * 33)
 	sprk.Units = Bytes
+	sprk.Out = out
 	started := false
 	return writer(func(b []byte) (int, error) {
 		if !started {
@@ -89,5 +89,5 @@ func Writer(w io.Writer) io.Writer {
 			sprk.Stop()
 		}
 		return n, err
-	})
+	}), sprk.Stop
 }
