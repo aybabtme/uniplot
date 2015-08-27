@@ -91,3 +91,38 @@ func Writer(w io.Writer) (io.Writer, func()) {
 		return n, err
 	}), sprk.Stop
 }
+
+func WriteSeeker(ws io.WriteSeeker) (io.WriteSeeker, func()) {
+	var out = os.Stderr
+	if f, ok := ws.(*os.File); ok && f == os.Stderr {
+		out = os.Stdout
+	}
+	sprk := Spark(time.Millisecond * 33)
+	sprk.Units = Bytes
+	sprk.Out = out
+	return writeSeeker{
+		WriteSeeker: ws,
+		sprk:        sprk,
+		started:     false,
+	}, sprk.Stop
+}
+
+type writeSeeker struct {
+	io.WriteSeeker
+	sprk    *SparkStream
+	started bool
+}
+
+func (w writeSeeker) Write(b []byte) (int, error) {
+	if !w.started {
+		w.sprk.Start()
+		w.started = true
+	}
+	n, err := w.WriteSeeker.Write(b)
+	if err == nil {
+		w.sprk.Add(float64(n))
+	} else {
+		w.sprk.Stop()
+	}
+	return n, err
+}
