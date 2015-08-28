@@ -92,6 +92,10 @@ func Writer(w io.Writer) (io.Writer, func()) {
 	}), sprk.Stop
 }
 
+// WriteSeeker wraps the writes to w with a SparkStream. The stream
+// will have Bytes units and refresh every 33ms.
+//
+// It will stop printing when the writer returns an error.
 func WriteSeeker(ws io.WriteSeeker) (io.WriteSeeker, func()) {
 	var out = os.Stderr
 	if f, ok := ws.(*os.File); ok && f == os.Stderr {
