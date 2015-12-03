@@ -34,7 +34,6 @@ func Hist(bins int, input []float64) Histogram {
 	if len(input) == 0 || bins == 0 {
 		return Histogram{}
 	}
-	buckets := make([]Bucket, bins)
 
 	min, max := input[0], input[0]
 	for _, val := range input {
@@ -42,8 +41,17 @@ func Hist(bins int, input []float64) Histogram {
 		max = math.Max(max, val)
 	}
 
-	scale := (max - min) / float64(bins)
+	if min == max {
+		return Histogram{
+			Min:     len(input),
+			Max:     len(input),
+			Count:   len(input),
+			Buckets: []Bucket{{Count: len(input), Min: min, Max: max}},
+		}
+	}
 
+	scale := (max - min) / float64(bins)
+	buckets := make([]Bucket, bins)
 	for i := range buckets {
 		bmin, bmax := float64(i)*scale+min, float64(i+1)*scale+min
 		buckets[i] = Bucket{Min: bmin, Max: bmax}
@@ -126,6 +134,9 @@ type ScaleFunc func(min, max, value int) float64
 // an histogram so that they do not exceed width.
 func Linear(width int) ScaleFunc {
 	return func(min, max, value int) float64 {
+		if min == max {
+			return 1
+		}
 		return float64(value-min) / float64(max-min) * float64(width)
 	}
 }

@@ -14,7 +14,7 @@ import (
 )
 
 func ExampleGetSize() {
-	size, _ := GetSize()
+	size, _ := GetSize(os.Stdin)
 	fmt.Println(size.Col())  // Get Width
 	fmt.Println(size.Row())  // Get Height
 	fmt.Println(size.PosX()) // Get X position
