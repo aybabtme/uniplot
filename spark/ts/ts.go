@@ -15,22 +15,22 @@ type Size struct {
 	posY uint16
 }
 
-// Get Terminal Width
+// Col gets Terminal Width
 func (w Size) Col() int {
 	return int(w.col)
 }
 
-// Get Terminal Height
+// Row gets Terminal Height
 func (w Size) Row() int {
 	return int(w.row)
 }
 
-// Get Position X
+// PosX gets Position X
 func (w Size) PosX() int {
 	return int(w.posX)
 }
 
-// Get Position Y
+// PosY gets Position Y
 func (w Size) PosY() int {
 	return int(w.posY)
 }

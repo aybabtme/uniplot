@@ -15,7 +15,7 @@ import (
 	"unsafe"
 )
 
-// Get Windows Size
+// GetSize gets Windows Size
 func GetSize(f *os.File) (ws Size, err error) {
 	_, _, ec := syscall.Syscall(syscall.SYS_IOCTL,
 		f.Fd(),
