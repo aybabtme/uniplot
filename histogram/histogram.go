@@ -1,8 +1,11 @@
 package histogram
 
 import (
-	"log"
+	"fmt"
 	"math"
+	"sort"
+
+	"github.com/spf13/cast"
 )
 
 // Histogram holds a count of values partionned over buckets.
@@ -30,9 +33,9 @@ type Bucket struct {
 }
 
 // Hist creates an histogram partionning input over `bins` buckets.
-func Hist(bins int, input []float64) Histogram {
+func Hist(bins int, input []float64) (Histogram, error) {
 	if len(input) == 0 || bins == 0 {
-		return Histogram{}
+		return Histogram{}, nil
 	}
 
 	min, max := input[0], input[0]
@@ -47,7 +50,7 @@ func Hist(bins int, input []float64) Histogram {
 			Max:     len(input),
 			Count:   len(input),
 			Buckets: []Bucket{{Count: len(input), Min: min, Max: max}},
-		}
+		}, nil
 	}
 
 	scale := (max - min) / float64(bins)
@@ -63,7 +66,7 @@ func Hist(bins int, input []float64) Histogram {
 		xdiff := val - minx
 		bi := imin(int(xdiff/scale), len(buckets)-1)
 		if bi < 0 || bi >= len(buckets) {
-			log.Panicf("bi=%d\tval=%f\txdiff=%f\tscale=%f\tlen(buckets)=%d", bi, val, xdiff, scale, len(buckets))
+			return Histogram{}, fmt.Errorf("bi=%d\tval=%f\txdiff=%f\tscale=%f\tlen(buckets)=%d", bi, val, xdiff, scale, len(buckets))
 		}
 		buckets[bi].Count++
 		minC = imin(minC, buckets[bi].Count)
@@ -75,7 +78,60 @@ func Hist(bins int, input []float64) Histogram {
 		Max:     maxC,
 		Count:   len(input),
 		Buckets: buckets,
+	}, nil
+}
+
+// HistByCustomRange creates an histogram by custom range, like elasticsearch data histogram query(left closed)
+func HistByCustomRange(min, max, interval float64, input []float64) (Histogram, error) {
+	if len(input) == 0 || interval == 0 {
+		return Histogram{}, nil
 	}
+
+	sort.Sort(sort.Float64Slice(input))
+
+	if min > input[len(input)-1] || max < input[0] {
+		return Histogram{}, nil
+	}
+
+	// input data equals range min and max
+	if min == max {
+		return Histogram{
+			Min:     len(input),
+			Max:     len(input),
+			Count:   len(input),
+			Buckets: []Bucket{{Count: len(input), Min: min, Max: max}},
+		}, nil
+	}
+
+	bins := cast.ToInt((max - min) / interval)
+	buckets := make([]Bucket, 0, bins)
+
+	bmax := min
+	for (bmax + interval) < max {
+		buckets = append(buckets, Bucket{Min: bmax, Max: bmax + interval})
+		bmax += interval
+	}
+	buckets = append(buckets, Bucket{Min: bmax, Max: max})
+
+	minC, maxC := 0, 0
+	for _, val := range input {
+		minx := min
+		xdiff := val - minx
+		bi := int(xdiff / interval)
+		if xdiff < 0 || bi >= len(buckets) {
+			continue
+		}
+		buckets[bi].Count++
+		minC = imin(minC, buckets[bi].Count)
+		maxC = imax(maxC, buckets[bi].Count)
+	}
+
+	return Histogram{
+		Min:     minC,
+		Max:     maxC,
+		Count:   len(input),
+		Buckets: buckets,
+	}, nil
 }
 
 // PowerHist creates an histogram partionning input over buckets of power
